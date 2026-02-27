@@ -263,6 +263,35 @@
             color: #454545;
             margin-top: 10px;
         }
+        /* 新增：语音不支持提示条 */
+        .speech-hint {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeeba;
+            border-radius: 50px;
+            padding: 15px 20px;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+            text-align: left;
+            line-height: 1.5;
+        }
+        .speech-hint button {
+            background: #856404;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 5px 15px;
+            font-size: 1.2rem;
+            float: right;
+            margin-top: -5px;
+            cursor: pointer;
+        }
         @media (max-width: 500px) {
             .option-btn { font-size: 3.2rem; padding: 15px 5px; }
             .voice-hint { font-size: 1.8rem; }
@@ -277,8 +306,54 @@
 </div>
 <script>
 (function() {
-    // ---------- 🌟 超大词汇库（2500字 + 听写短语）----------
-    // 每个短语的最后一个字就是对应汉字 (已全部校对)
+    // ---------- 语音支持检测与提示 ----------
+    let hintShown = false; // 避免重复显示
+
+    function showUnsupportedHint() {
+        if (hintShown) return;
+        hintShown = true;
+
+        // 创建提示条
+        const hintDiv = document.createElement('div');
+        hintDiv.className = 'speech-hint';
+        hintDiv.id = 'speechHint';
+        hintDiv.innerHTML = `
+            <strong>🔊 听不到声音？</strong><br>
+            📱 <strong>iPhone用户：</strong>点击右上角「···」→「在Safari中打开」<br>
+            📱 <strong>华为/安卓用户：</strong>点击右上角「···」→「在浏览器中打开」（推荐用华为/Chrome浏览器）<br>
+            ⚙️ 如果还不行，请检查手机「设置」→「语言和输入法」→「文字转语音输出」是否开启<br>
+            <button onclick="this.parentElement.remove()">关闭</button>
+        `;
+        document.body.appendChild(hintDiv);
+
+        // 5秒后自动淡出移除（可选）
+        setTimeout(() => {
+            const el = document.getElementById('speechHint');
+            if (el) el.remove();
+        }, 15000);
+    }
+
+    // 修改 speak 函数，检测不支持时显示提示
+    const originalSpeak = function(phrase) {
+        if (!window.speechSynthesis) {
+            showUnsupportedHint();
+            return;
+        }
+        const utterance = new SpeechSynthesisUtterance(phrase);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.9;
+        utterance.pitch = 1.2;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+    };
+
+    // 页面加载后立即检测一次（如果一开始就不支持，直接显示提示）
+    if (!window.speechSynthesis) {
+        // 使用 setTimeout 确保 DOM 已加载
+        setTimeout(showUnsupportedHint, 500);
+    }
+
+    // ---------- 原有代码（稍作修改，将 speak 替换为 originalSpeak）----------
     const WORD_PHRASE_MAP = new Map([
         ["一", "唯一的一"],["乙", "甲乙的乙"],["二", "二胡的二"],["十", "十足的十"],["丁", "园丁的丁"],
         ["厂", "工厂的厂"],["七", "七天的七"],["卜", "萝卜的卜"],["人", "人民的人"],["入", "出入的入"],
@@ -423,7 +498,7 @@
         ["系", "关系的系"],["言", "语言的语言"],["冻", "冰冻的冻"],["状", "形状的状"],["亩", "一亩的亩"],
         ["况", "情况的况"],["床", "床铺的床"],["库", "仓库的库"],["疗", "治疗的治疗"],["应", "应该的应"],
         ["冷", "寒冷的冷"],["这", "这里的这"],["序", "顺序的序"],["辛", "辛苦的辛"],["弃", "放弃的弃"],
-        ["冶", "冶金术的冶"],["忘", "忘记的忘"],["闲", "空闲的闲"],["间", "时间的时间"],["闷", "闷热的闷"],
+        ["冶", "冶金术的冶"],["忘", "忘记的忘"],["闲", "空闲的闲"],["间", "时间的间"],["闷", "闷热的闷"],
         ["判", "判断的判"],["灶", "灶台的灶"],["灿", "灿烂的灿"],["弟", "弟弟的弟"],["汪", "汪洋的汪"],
         ["沙", "沙子的沙"],["汽", "汽车的汽"],["沃", "肥沃的沃"],["泛", "广泛的泛"],["沟", "水沟的沟"],
         ["没", "没有的没"],["沈", "沈阳的沈"],["沉", "下沉的沉"],["怀", "怀抱的怀"],["忧", "忧愁的忧"],
@@ -667,14 +742,14 @@
         ["趋", "趋势的趋"],["超", "超过的超"],["提", "提醒的提"],["堤", "堤坝的堤"],["博", "博学的博"],
         ["揭", "揭发的揭"],["喜", "欢喜的喜"],["插", "插花的插"],["揪", "揪心的揪"],["搜", "搜索的搜"],
         ["煮", "煮饭的煮"],["援", "援助的援"],["裁", "裁缝的裁"],["搁", "搁置的搁"],["搂", "搂抱的搂"],
-        ["搅", "搅动的搅"],["握", "握手的握"],["揉", "揉面的揉"],["斯", "斯文的斯"],["期", "期待期的期"],
+        ["搅", "搅动的搅"],["握", "握手的握"],["揉", "揉面的揉"],["斯", "斯文的斯"],["期", "期待的期"],
         ["欺", "欺负的欺"],["联", "联合的联"],["散", "散开的散"],["惹", "惹祸的惹"],["葬", "埋葬的葬"],
         ["葛", "葛根的葛"],["董", "董事的董"],["葡", "葡萄的葡"],["敬", "敬礼的敬"],["葱", "葱花的葱"],
         ["落", "落叶的落"],["朝", "朝阳的朝"],["辜", "无辜的辜"],["葵", "葵花的葵"],["棒", "棒球的棒"],
         ["棋", "围棋的棋"],["植", "植物的植"],["森", "森林的森"],["椅", "椅子的椅"],["椒", "辣椒的椒"],
         ["棵", "一棵的棵"],["棍", "棍子的棍"],["棉", "棉花的棉"],["棚", "棚子的棚"],["棕", "棕色的棕"],
         ["惠", "实惠的惠"],["惑", "诱惑的惑"],["逼", "逼迫的逼"],["厨", "厨房的厨"],["厦", "大厦的厦"],
-        ["硬", "坚硬的硬"],["确", "确实的确实"],["雁", "大雁的雁"],["殖", "繁殖的殖"],["裂", "裂开的裂"],
+        ["硬", "坚硬的硬"],["确", "确实的确"],["雁", "大雁的雁"],["殖", "繁殖的殖"],["裂", "裂开的裂"],
         ["雄", "英雄的雄"],["暂", "暂时的暂"],["雅", "文雅的雅"],["辈", "长辈的辈"],["悲", "悲伤的悲"],
         ["紫", "紫色的紫"],["辉", "光辉的辉"],["敞", "宽敞的敞"],["赏", "欣赏的赏"],["掌", "手掌的掌"],
         ["晴", "晴天的晴"],["暑", "暑期的暑"],["最", "最后的最"],["量", "重量的量"],["喷", "喷水的喷"],
@@ -710,7 +785,7 @@
         ["携", "携带的携"],["搬", "搬运的搬"],["摇", "摇摆的摇"],["搞", "搞鬼的搞"],["塘", "池塘的塘"],
         ["摊", "摊开的摊"],["蒜", "蒜头的蒜"],["勤", "勤劳的勤"],["鹊", "喜鹊的鹊"],["蓝", "蓝色的蓝"],
         ["墓", "坟墓的墓"],["幕", "幕后的幕"],["蓬", "蓬松的蓬"],["蓄", "储蓄的蓄"],["蒙", "蒙面的蒙"],
-        ["蒸", "蒸发的蒸"],["献", "奉献的献"],["禁", "禁止的禁"],["楚", "清楚楚"],["想", "想念的想"],
+        ["蒸", "蒸发的蒸"],["献", "奉献的献"],["禁", "禁止的禁"],["楚", "清楚的楚"],["想", "想念的想"],
         ["槐", "槐树的槐"],["榆", "榆树的榆"],["楼", "楼房的楼"],["概", "概括的概"],["赖", "依赖的赖"],
         ["酬", "酬劳的酬"],["感", "感觉的感"],["碍", "碍事的碍"],["碑", "石碑的碑"],["碎", "破碎的碎"],
         ["碰", "碰到的碰"],["碗", "碗筷的碗"],["碌", "忙碌的碌"],["雷", "雷声的雷"],["零", "零碎的零"],
@@ -795,9 +870,10 @@
 
     const app = document.getElementById('app');
 
+    // 将 speak 替换为我们的增强版函数
     function speak(phrase) {
         if (!window.speechSynthesis) {
-            alert('浏览器不支持语音朗读，请升级。');
+            showUnsupportedHint();
             return;
         }
         const utterance = new SpeechSynthesisUtterance(phrase);
@@ -829,7 +905,7 @@
                     <img src="logo.png" alt="扬帆中文" style="max-width:80%;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <div style="display:none; font-size:2rem; color:#b0450e;">扬帆中文</div>
                 </div>
-                <h1>📖 识字小测试</h1>
+                <h1>📖 识字大挑战</h1>
                 <div class="info-note">
                     <p>🔊 听语音选择正确的汉字，共50题。</p>
                     <p>✅ 根据正确率估算识字量，结果仅供参考。</p>
@@ -837,7 +913,7 @@
                     <p>⏱️ 用时约3-5分钟，请在安静环境中打开音量。</p>
                     <small>*本测试基于国家语委《通用规范汉字表》及教育部《义务教育语文课程标准》选取常见2500字。</small>
                 </div>
-                <button class="btn-start" id="startBtn">🚀 开始测试</button>
+                <button class="btn-start" id="startBtn">🚀 开始挑战</button>
             </div>
         `;
         app.innerHTML = html;
@@ -926,7 +1002,7 @@
                     <img src="logo.png" alt="扬帆中文" style="max-height:60px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <div style="display:none; font-size:2rem; color:#b0450e;">扬帆中文</div>
                 </div>
-                <h2>🎊 测试完成 🎊</h2>
+                <h2>🎊 挑战完成 🎊</h2>
                 <div class="result-number">${score} / 50</div>
                 <div style="font-size:2rem; margin:15px 0;">正确率 ${correctRate}%</div>
                 <div style="font-size:2.2rem; background:#fef5b3; padding:15px; border-radius:50px; margin:15px 0;">
@@ -950,7 +1026,13 @@
         });
     }
 
+    // 启动页面
     renderStart();
+
+    // 如果一开始就不支持语音，也显示提示（但延迟一点确保DOM加载）
+    if (!window.speechSynthesis) {
+        setTimeout(showUnsupportedHint, 500);
+    }
 })();
 </script>
 </body>
