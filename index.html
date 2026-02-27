@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <title>🧸 扬帆中文 · 儿童识字量评估</title>
     <style>
+        /* 原有样式保持不变 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -263,34 +264,64 @@
             color: #454545;
             margin-top: 10px;
         }
-        /* 新增：语音不支持提示条 */
-        .speech-hint {
+        /* 微信引导浮层样式 */
+        .wechat-guide {
             position: fixed;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            background: #fff3cd;
-            color: #856404;
-            border: 2px solid #ffeeba;
-            border-radius: 50px;
-            padding: 15px 20px;
-            font-size: 1.4rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
             z-index: 10000;
-            backdrop-filter: blur(5px);
-            text-align: left;
-            line-height: 1.5;
+            backdrop-filter: blur(3px);
         }
-        .speech-hint button {
-            background: #856404;
-            color: white;
-            border: none;
+        .guide-box {
+            background: white;
             border-radius: 30px;
-            padding: 5px 15px;
-            font-size: 1.2rem;
-            float: right;
-            margin-top: -5px;
+            padding: 30px 25px;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .guide-box .arrow {
+            font-size: 4rem;
+            line-height: 1;
+            margin-bottom: 5px;
+            display: inline-block;
+            transform: rotate(90deg); /* 让箭头指向右上 */
+        }
+        .guide-box p {
+            font-size: 1.8rem;
+            color: #333;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .guide-box .tip {
+            font-size: 1.4rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .guide-box .close-btn {
+            background: #ffb054;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 40px;
+            font-size: 1.6rem;
+            color: #362813;
+            font-weight: bold;
             cursor: pointer;
+            box-shadow: 0 4px 0 #b7611e;
+            transition: 0.05s;
+            border: 2px solid #ffeec2;
+            margin-top: 10px;
+        }
+        .guide-box .close-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #b7611e;
         }
         @media (max-width: 500px) {
             .option-btn { font-size: 3.2rem; padding: 15px 5px; }
@@ -306,51 +337,39 @@
 </div>
 <script>
 (function() {
-    // ---------- 语音支持检测与提示 ----------
-    let hintShown = false; // 避免重复显示
-
-    function showUnsupportedHint() {
-        if (hintShown) return;
-        hintShown = true;
-
-        // 创建提示条
-        const hintDiv = document.createElement('div');
-        hintDiv.className = 'speech-hint';
-        hintDiv.id = 'speechHint';
-        hintDiv.innerHTML = `
-            <strong>🔊 听不到声音？</strong><br>
-            📱 <strong>iPhone用户：</strong>点击右上角「···」→「在Safari中打开」<br>
-            📱 <strong>华为/安卓用户：</strong>点击右上角「···」→「在浏览器中打开」（推荐用华为/Chrome浏览器）<br>
-            ⚙️ 如果还不行，请检查手机「设置」→「语言和输入法」→「文字转语音输出」是否开启<br>
-            <button onclick="this.parentElement.remove()">关闭</button>
-        `;
-        document.body.appendChild(hintDiv);
-
-        // 5秒后自动淡出移除（可选）
-        setTimeout(() => {
-            const el = document.getElementById('speechHint');
-            if (el) el.remove();
-        }, 15000);
+    // ---------- 微信浏览器检测 ----------
+    function isWeChat() {
+        var ua = navigator.userAgent.toLowerCase();
+        return ua.indexOf('micromessenger') !== -1;
     }
 
-    // 修改 speak 函数，检测不支持时显示提示
-    const originalSpeak = function(phrase) {
-        if (!window.speechSynthesis) {
-            showUnsupportedHint();
-            return;
-        }
-        const utterance = new SpeechSynthesisUtterance(phrase);
-        utterance.lang = 'zh-CN';
-        utterance.rate = 0.9;
-        utterance.pitch = 1.2;
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(utterance);
-    };
+    // 如果在微信中，显示引导浮层
+    if (isWeChat()) {
+        // 创建浮层元素
+        var guideDiv = document.createElement('div');
+        guideDiv.className = 'wechat-guide';
+        guideDiv.id = 'wechatGuide';
+        guideDiv.innerHTML = `
+            <div class="guide-box">
+                <div class="arrow">↗️</div>
+                <p>请在浏览器中打开</p>
+                <div class="tip">点击右上角 <strong>···</strong> 选择<br>「在浏览器中打开」</div>
+                <button class="close-btn" id="closeGuide">我知道了</button>
+            </div>
+        `;
+        document.body.appendChild(guideDiv);
 
-    // 页面加载后立即检测一次（如果一开始就不支持，直接显示提示）
-    if (!window.speechSynthesis) {
-        // 使用 setTimeout 确保 DOM 已加载
-        setTimeout(showUnsupportedHint, 500);
+        // 点击按钮关闭浮层
+        document.getElementById('closeGuide').addEventListener('click', function() {
+            guideDiv.remove();
+        });
+
+        // 也可以点击背景关闭（可选）
+        guideDiv.addEventListener('click', function(e) {
+            if (e.target === guideDiv) {
+                guideDiv.remove();
+            }
+        });
     }
 
     // ---------- 原有代码（稍作修改，将 speak 替换为 originalSpeak）----------
