@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <title>🧸 扬帆中文 · 儿童识字量评估</title>
     <style>
-        /* 原有样式保持不变 */
+        /* 原有样式保持不变，仅增强手机适配部分 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -323,11 +323,84 @@
             transform: translateY(4px);
             box-shadow: 0 0 0 #b7611e;
         }
+
+        /* ========== 新增手机适配优化 ========== */
+        /* 结果页数字响应式 */
+        .finish-panel .result-number {
+            font-size: clamp(3rem, 12vw, 5rem);  /* 手机最小3rem，最大5rem */
+            padding: 10px 5vw;                    /* 左右内边距用视口单位，避免溢出 */
+            max-width: 90%;                        /* 限制最大宽度 */
+            margin: 15px auto;
+            white-space: nowrap;                    /* 防止数字换行 */
+        }
+        /* 给正确率行和词汇量框添加类名（已在JS中修改） */
+        .finish-panel .result-rate {
+            font-size: clamp(1.8rem, 5vw, 2.2rem);
+            margin: 10px 0;
+        }
+        .finish-panel .result-estimate {
+            font-size: clamp(1.8rem, 5vw, 2.2rem);
+            padding: 10px 15px;
+            margin: 10px 0;
+            background: #fef5b3;
+            border-radius: 50px;
+        }
+        /* 联系信息在手机上的压缩 */
+        .contact-info {
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            padding: 12px;
+            line-height: 1.6;
+        }
+        .restart-btn {
+            font-size: clamp(1.8rem, 5vw, 2.2rem);
+            padding: 15px 25px;
+        }
+        .small-note {
+            font-size: clamp(1rem, 3vw, 1.2rem);
+        }
+
+        /* 针对超小屏幕（≤380px）进一步优化 */
+        @media (max-width: 380px) {
+            .finish-panel .result-number {
+                font-size: clamp(2.4rem, 10vw, 3.5rem);
+                padding: 5px 3vw;
+            }
+            .finish-panel h2 {
+                font-size: 2rem;
+            }
+            .result-rate, .result-estimate {
+                font-size: 1.6rem;
+            }
+            .contact-info {
+                font-size: 1.1rem;
+                padding: 10px;
+            }
+            .restart-btn {
+                font-size: 1.6rem;
+                padding: 12px 20px;
+            }
+            .guide-box {
+                max-width: 280px;
+                padding: 20px 15px;
+            }
+            .guide-box p {
+                font-size: 1.6rem;
+            }
+            .guide-box .tip {
+                font-size: 1.2rem;
+            }
+            .guide-box .close-btn {
+                font-size: 1.4rem;
+                padding: 10px 20px;
+            }
+        }
+
+        /* 原有 500px 下的调整保留并增强 */
         @media (max-width: 500px) {
             .option-btn { font-size: 3.2rem; padding: 15px 5px; }
             .voice-hint { font-size: 1.8rem; }
             .header { font-size: 1.2rem; }
-            .contact-info { font-size: 1.3rem; }
+            /* 已经通过 clamp 控制，这里无需重复 */
         }
     </style>
 </head>
@@ -345,7 +418,6 @@
 
     // 如果在微信中，显示引导浮层
     if (isWeChat()) {
-        // 创建浮层元素
         var guideDiv = document.createElement('div');
         guideDiv.className = 'wechat-guide';
         guideDiv.id = 'wechatGuide';
@@ -358,13 +430,9 @@
             </div>
         `;
         document.body.appendChild(guideDiv);
-
-        // 点击按钮关闭浮层
         document.getElementById('closeGuide').addEventListener('click', function() {
             guideDiv.remove();
         });
-
-        // 也可以点击背景关闭（可选）
         guideDiv.addEventListener('click', function(e) {
             if (e.target === guideDiv) {
                 guideDiv.remove();
@@ -878,7 +946,7 @@
     ]);
 
     const ALL_WORDS = Array.from(WORD_PHRASE_MAP.keys());
-    const TOTAL_WORDS = ALL_WORDS.length;  // 2500
+    const TOTAL_WORDS = ALL_WORDS.length;  // 实际应为2500
 
     let currentQuestions = [];
     let currentIndex = 0;
@@ -889,10 +957,9 @@
 
     const app = document.getElementById('app');
 
-    // 将 speak 替换为我们的增强版函数
     function speak(phrase) {
         if (!window.speechSynthesis) {
-            showUnsupportedHint();
+            alert('浏览器不支持语音朗读，请升级。');
             return;
         }
         const utterance = new SpeechSynthesisUtterance(phrase);
@@ -936,9 +1003,7 @@
             </div>
         `;
         app.innerHTML = html;
-        document.getElementById('startBtn').addEventListener('click', () => {
-            startNewTest();
-        });
+        document.getElementById('startBtn').addEventListener('click', startNewTest);
     }
 
     function startNewTest() {
@@ -1015,6 +1080,7 @@
     function renderFinish() {
         const correctRate = (score / 50 * 100).toFixed(1);
         const estimatedVocab = Math.round(score / 50 * TOTAL_WORDS);
+        // 给正确率和词汇量框添加了类名，方便CSS控制
         const html = `
             <div class="finish-panel">
                 <div class="logo-area">
@@ -1023,14 +1089,11 @@
                 </div>
                 <h2>🎊 挑战完成 🎊</h2>
                 <div class="result-number">${score} / 50</div>
-                <div style="font-size:2rem; margin:15px 0;">正确率 ${correctRate}%</div>
-                <div style="font-size:2.2rem; background:#fef5b3; padding:15px; border-radius:50px; margin:15px 0;">
-                    词汇量 ≈ ${estimatedVocab} 字
-                </div>
-                <!-- 温馨版宣传语 + 联系方式 -->
+                <div class="result-rate">正确率 ${correctRate}%</div>
+                <div class="result-estimate">词汇量 ≈ ${estimatedVocab} 字</div>
                 <div class="contact-info">
                     ✨ 想了解孩子更全面的中文能力吗？<br>
-                    <strong>卡尔加里扬帆中文</strong> 提供专业的识字、阅读、写作测评，现在预约即可享受 <strong>免费1对1专业测评</strong>！<br>
+                    <strong>卡尔加里扬帆中文学校</strong> 提供专业的识字、阅读、写作测评，现在预约即可享受 <strong>免费1对1专业测评</strong>！<br>
                     📞 微信：<strong>yangfan-chinese</strong><br>
                     📧 邮箱：<a href="mailto:yangfanchinese@gmail.com">yangfanchinese@gmail.com</a><br>
                     🌐 网址：<a href="http://yangfanchinese.com" target="_blank">yangfanchinese.com</a>
@@ -1040,18 +1103,10 @@
             </div>
         `;
         app.innerHTML = html;
-        document.getElementById('restartBtn').addEventListener('click', () => {
-            startNewTest();
-        });
+        document.getElementById('restartBtn').addEventListener('click', startNewTest);
     }
 
-    // 启动页面
     renderStart();
-
-    // 如果一开始就不支持语音，也显示提示（但延迟一点确保DOM加载）
-    if (!window.speechSynthesis) {
-        setTimeout(showUnsupportedHint, 500);
-    }
 })();
 </script>
 </body>
