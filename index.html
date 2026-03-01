@@ -325,6 +325,20 @@
         }
 
         /* ========== 新增手机适配优化 ========== */
+       /* 强制“挑战完成”标题不换行 */
+.finish-panel h2 {
+    white-space: nowrap;
+    font-size: clamp(2rem, 6vw, 2.4rem);
+}
+
+/* 联系方式每一行强制不换行，超出部分截断（可选） */
+.contact-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 其他已有的适配代码…… */
         /* 结果页数字响应式 */
         .finish-panel .result-number {
             font-size: clamp(3rem, 12vw, 5rem);  /* 手机最小3rem，最大5rem */
@@ -1091,13 +1105,18 @@
                 <div class="result-number">${score} / 50</div>
                 <div class="result-rate">正确率 ${correctRate}%</div>
                 <div class="result-estimate">词汇量 ≈ ${estimatedVocab} 字</div>
-                <div class="contact-info">
-                    ✨ 想了解孩子更全面的中文能力吗？<br>
-                    <strong>卡尔加里扬帆中文学校</strong> 提供专业的识字、阅读、写作测评，现在预约即可享受 <strong>免费1对1专业测评</strong>！<br>
-                    📞 微信：<strong>yangfan-chinese</strong><br>
-                    📧 邮箱：<a href="mailto:yangfanchinese@gmail.com">yangfanchinese@gmail.com</a><br>
-                    🌐 网址：<a href="http://yangfanchinese.com" target="_blank">yangfanchinese.com</a>
-                </div>
+               <div class="contact-info">
+    <div class="contact-line">✨ 想了解孩子更全面的中文能力吗？</div>
+    <div class="contact-line"><strong>卡尔加里扬帆中文</strong> 提供专业的识字、阅读、写作测评，现在预约即可享受 <strong>免费1对1专业测评</strong>！</div>
+    <div class="contact-line">📞 微信：<strong>yangfan-chinese</strong></div>
+    <div class="contact-line">📧 邮箱：<a href="mailto:yangfanchinese@gmail.com">yangfanchinese@gmail.com</a></div>
+    <div class="contact-line">🌐 网址：<a href="http://yangfanchinese.com" target="_blank">yangfanchinese.com</a></div>
+</div>
+.contact-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* 可选，防止溢出时截断显示省略号 */
+}
                 <p class="small-note">* 结果仅供参考，建议测试3次取平均值。</p>
                 <button class="restart-btn" id="restartBtn">🔄 再测一次</button>
             </div>
